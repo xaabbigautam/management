@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team • Greenfield Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Login Form -->
+        <div id="loginForm" class="card">
+            <h2><i class="fas fa-users"></i> Team Member Login</h2>
+            <p class="subtitle">Login directly with your credentials</p>
+            
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="teamEmail" placeholder="subash@teamlead.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <div style="position: relative;">
+                    <input type="password" id="teamPassword" placeholder="Enter your password" required>
+                    <button type="button" onclick="togglePassword('teamPassword')" 
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                                   background: none; border: none; color: #666; cursor: pointer;">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="handleTeamLogin()" class="btn login">
+                <i class="fas fa-sign-in-alt"></i> LOGIN
+            </button>
+            
+            <div style="margin-top: 20px;">
+                <p style="font-size: 0.8rem; color: #666;">
+                    <i class="fas fa-check-circle"></i> These team members can login directly. They will be automatically added to the system.
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="index.html" class="btn small">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+        </div>
+
+        <!-- Team Dashboard -->
+        <div id="teamDashboard" class="hidden">
+            <!-- Sync Status Bar -->
+            <div style="margin-bottom: 20px; padding: 10px 15px; background: #f1f8e9; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span id="syncStatusText" style="color: #666; font-size: 0.9rem;">
+                        <i class="fas fa-sync"></i> Connecting...
+                    </span>
+                </div>
+                <div>
+                    <button onclick="refreshData()" class="btn small" style="padding: 5px 15px; font-size: 0.8rem;">
+                        <i class="fas fa-redo"></i> Refresh
+                    </button>
+                    <button onclick="processPendingSync()" class="btn small blue" style="padding: 5px 15px; font-size: 0.8rem; margin-left: 5px;">
+                        <i class="fas fa-sync-alt"></i> Sync Now
+                    </button>
+                </div>
+            </div>
+            
+            <div class="header">
+                <div>
+                    <h3><i class="fas fa-user-circle"></i> Welcome, <span id="userName">User</span></h3>
+                    <p style="color: #666; font-size: 0.9rem;" id="userZone">Team Member</p>
+                </div>
+                <div>
+                    <button onclick="logout()" class="btn small red">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs for different task views -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event, 'allTasksTab')" id="allTasksTabBtn">
+                    <i class="fas fa-globe"></i> All Tasks
+                    <span id="allTasksBadge" class="notification-badge" style="display: none;">0</span>
+                </button>
+                <button class="tab-btn" onclick="openTab(event, 'createTaskTab')">
+                    <i class="fas fa-plus-circle"></i> Create Task
+                </button>
+                <button class="tab-btn" onclick="openTab(event, 'myTasksTab')" id="myTasksTabBtn">
+                    <i class="fas fa-tasks"></i> My Tasks
+                    <span id="myTasksBadge" class="notification-badge" style="display: none;">0</span>
+                </button>
+                <button class="tab-btn" onclick="openTab(event, 'assignedTasksTab')" id="assignedTasksTabBtn">
+                    <i class="fas fa-user-check"></i> Assigned to Me
+                    <span id="assignedTasksBadge" class="notification-badge" style="display: none;">0</span>
+                </button>
+                <button class="tab-btn" onclick="openTab(event, 'adminTasksTab')">
+                    <i class="fas fa-user-shield"></i> Admin Tasks
+                </button>
+            </div>
+
+            <!-- Tab 1: All Tasks -->
+            <div id="allTasksTab" class="tab-content active">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3><i class="fas fa-globe"></i> All System Tasks (<span id="allTaskCount">0</span>)</h3>
+                        <div>
+                            <input type="text" id="searchAllTasks" placeholder="Search tasks..." 
+                                   onkeyup="filterAllTasks()" style="width: 250px;">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f1f8e9; border-radius: 10px;">
+                        <i class="fas fa-info-circle"></i> 
+                        <span>Viewing all tasks in the system. Everyone can see all tasks for transparency.</span>
+                    </div>
+                    
+                    <div id="allTaskList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading all tasks...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Create Task -->
+            <div id="createTaskTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-plus-circle"></i> Create New Task</h3>
+                    <p class="subtitle" style="color: #666; font-size: 0.9rem;">
+                        <i class="fas fa-info-circle"></i> Team tasks require admin approval before becoming visible
+                    </p>
+                    
+                    <div class="form-group">
+                        <label>Task Description *</label>
+                        <textarea id="taskDescription" placeholder="Describe the task in detail..." rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Zone *</label>
+                        <select id="taskZone" required>
+                            <option value="">Select Zone</option>
+                            <option value="Main Villa">Main Villa</option>
+                            <option value="Main SPA">Main SPA</option>
+                            <option value="Mountain Villa">Mountain Villa</option>
+                            <option value="Entourage">Entourage</option>
+                            <option value="Pool House">Pool House</option>
+                            <option value="Gate 3">Gate 3</option>
+                            <option value="Golf Landscaping">Golf Landscaping</option>
+                            <option value="Areesh">Areesh</option>
+                            <option value="MUD 1">MUD 1</option>
+                            <option value="MUD 2">MUD 2</option>
+                            <option value="MUD 3">MUD 3</option>
+                            <option value="MUD 4">MUD 4</option>
+                            <option value="MUD 5">MUD 5</option>
+                            <option value="MUD 6">MUD 6</option>
+                            <option value="Paddle Court">Paddle Court</option>
+                            <option value="Gaming Building">Gaming Building</option>
+                            <option value="Indian Palace Front">Indian Palace Front</option>
+                            <option value="Indian Palace back">Indian Palace back</option>
+                            <option value="Royal Caravan">Royal Caravan</option>
+                            <option value="Cycle Track">Cycle Track</option>
+                            <option value="POD 1 Indoor">POD 1 Indoor</option>
+                            <option value="POD 1 Out door">POD 1 Outdoor</option>
+                            <option value="Royal Road">Royal Road</option>
+                            <option value="Gate 5">Gate 5</option>
+                            <option value="VIP Hotel">VIP Hotel</option>
+                            <option value="Staff Canteen Z1">Staff Canteen Z1</option>
+                            <option value="Staff Canteen Z2">Staff Canteen Z2</option>
+                            <option value="Staff Canteen Z3">Staff Canteen Z3</option>
+                            <option value="Other">Other Area</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-camera"></i> Add Photo (Optional - Max 2MB)
+                        </label>
+                        <input type="file" id="taskPhoto" accept="image/*" style="padding: 10px;">
+                        <div id="photoPreview" style="margin-top: 10px;"></div>
+                    </div>
+                    
+                    <button onclick="submitNewTask()" class="btn submit" id="submitTaskBtn">
+                        <i class="fas fa-paper-plane"></i> SUBMIT FOR APPROVAL
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 3: My Tasks -->
+            <div id="myTasksTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-tasks"></i> My Created Tasks (<span id="myTaskCount">0</span>)</h3>
+                    
+                    <div id="myTaskList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading your tasks...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Assigned Tasks -->
+            <div id="assignedTasksTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-user-check"></i> Tasks Assigned to Me (<span id="assignedTaskCount">0</span>)</h3>
+                    
+                    <div id="assignedTaskList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading assigned tasks...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: Admin Tasks -->
+            <div id="adminTasksTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-user-shield"></i> Admin Tasks (<span id="adminTaskCount">0</span>)</h3>
+                    <p class="subtitle">Tasks created by administrators</p>
+                    
+                    <div id="adminTaskList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading admin tasks...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div id="debugPanel" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 9999; display: none;">
+        <div><strong>Debug Info</strong></div>
+        <div>Online: <span id="debugOnline">-</span></div>
+        <div>Firebase: <span id="debugFirebase">-</span></div>
+        <div>Tasks: <span id="debugTasks">0</span></div>
+        <div>Pending Sync: <span id="debugPendingSync">0</span></div>
+        <button onclick="toggleDebug()" style="margin-top: 5px; padding: 2px 5px; font-size: 10px;">Hide</button>
+    </div>
+
+    <!-- Main Script -->
+    <script src="script.js"></script>
+    
+    <!-- Team Page Specific Script -->
+    <script>
+        // Global variables
+        let userData = null;
+        let currentTab = 'allTasksTab';
+        let allTasks = {};
+        
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Team page loaded");
+            
+            const savedUser = localStorage.getItem('greenfield_user');
+            if (savedUser) {
+                try {
+                    userData = JSON.parse(savedUser);
+                    if (!userData.isAdmin) {
+                        showTeamDashboard(userData.name, userData.zone);
+                        loadTasks();
+                        startUpdateListener();
+                    } else {
+                        window.location.href = 'admin.html';
+                    }
+                } catch (e) {
+                    console.error("Error parsing user data:", e);
+                    localStorage.removeItem('greenfield_user');
+                }
+            }
+            
+            // Handle Enter key in login form
+            const passwordInput = document.getElementById('teamPassword');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        handleTeamLogin();
+                    }
+                });
+            }
+            
+            // Photo preview handler
+            const taskPhotoInput = document.getElementById('taskPhoto');
+            if (taskPhotoInput) {
+                taskPhotoInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                            showNotification("Image too large (max 2MB)", "error");
+                            this.value = '';
+                            return;
+                        }
+                        
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const previewElement = document.getElementById('photoPreview');
+                            if (previewElement) {
+                                previewElement.innerHTML = `
+                                    <img src="${e.target.result}" alt="Preview" 
+                                         style="max-width: 200px; border-radius: 8px; border: 2px solid #4caf50;">
+                                `;
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+            
+            // Listen for task updates
+            window.addEventListener('taskUpdate', function() {
+                console.log("Task update received");
+                loadTasks();
+                renderCurrentTab();
+            });
+            
+            // Listen for Firebase connection
+            window.addEventListener('firebaseConnected', function() {
+                console.log("Firebase connected event received");
+                loadTasks();
+                renderCurrentTab();
+            });
+            
+            // Start debug monitor
+            startDebugMonitor();
+        });
+        
+        // Start debug monitoring
+        function startDebugMonitor() {
+            setInterval(() => {
+                if (window.debugVisible) {
+                    updateDebugInfo();
+                }
+            }, 3000);
+        }
+        
+        // Debug panel functions
+        let debugVisible = false;
+        function toggleDebug() {
+            const panel = document.getElementById('debugPanel');
+            debugVisible = !debugVisible;
+            panel.style.display = debugVisible ? 'block' : 'none';
+            
+            if (debugVisible) {
+                updateDebugInfo();
+            }
+        }
+        
+        function updateDebugInfo() {
+            const onlineStatus = typeof isOnline !== 'undefined' ? isOnline : false;
+            const firebaseStatus = typeof isFirebaseInitialized !== 'undefined' ? isFirebaseInitialized : false;
+            const taskCount = typeof allTasks !== 'undefined' ? Object.keys(allTasks || {}).length : 0;
+            
+            // Get pending sync count
+            const pendingSync = JSON.parse(localStorage.getItem('greenfield_pending_sync') || '[]');
+            const pendingSyncCount = pendingSync.length;
+            
+            document.getElementById('debugOnline').textContent = onlineStatus ? '✓' : '✗';
+            document.getElementById('debugFirebase').textContent = firebaseStatus ? '✓' : '✗';
+            document.getElementById('debugTasks').textContent = taskCount;
+            document.getElementById('debugPendingSync').textContent = pendingSyncCount;
+        }
+        
+        // Load tasks
+        function loadTasks() {
+            try {
+                if (typeof getAllTasks === 'function') {
+                    const tasksArray = getAllTasks();
+                    allTasks = tasksArray.reduce((acc, task) => {
+                        acc[task.id] = task;
+                        return acc;
+                    }, {});
+                } else {
+                    allTasks = JSON.parse(localStorage.getItem('greenfield_tasks') || '{}');
+                }
+                console.log("Loaded tasks:", Object.keys(allTasks).length);
+            } catch (error) {
+                console.error("Error loading tasks:", error);
+                allTasks = {};
+            }
+        }
+        
+        // Start update listener
+        function startUpdateListener() {
+            setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    loadTasks();
+                    renderCurrentTab();
+                    updateBadges();
+                }
+            }, 5000);
+        }
+        
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            
+            const icon = input.parentElement.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+        
+        // Handle team login
+        async function handleTeamLogin() {
+            const email = document.getElementById('teamEmail').value.trim();
+            const password = document.getElementById('teamPassword').value;
+            
+            if (!email || !password) {
+                showNotification("Please enter email and password", "error");
+                return;
+            }
+            
+            const success = await teamLogin(email, password);
+            if (success) {
+                const savedUser = JSON.parse(localStorage.getItem('greenfield_user'));
+                userData = savedUser;
+                showTeamDashboard(savedUser.name, savedUser.zone);
+                loadTasks();
+                startUpdateListener();
+                
+                // Show debug panel if Firebase not connected
+                setTimeout(() => {
+                    if (typeof isFirebaseInitialized !== 'undefined' && !isFirebaseInitialized) {
+                        toggleDebug();
+                    }
+                }, 5000);
+            }
+        }
+        
+        // Show team dashboard
+        function showTeamDashboard(userName, userZone) {
+            const loginForm = document.getElementById('loginForm');
+            const teamDashboard = document.getElementById('teamDashboard');
+            
+            if (loginForm) loginForm.classList.add('hidden');
+            if (teamDashboard) teamDashboard.classList.remove('hidden');
+            
+            document.getElementById('userName').textContent = userName;
+            document.getElementById('userZone').textContent = userZone || 'Team Member';
+            
+            // Update sync status
+            updateSyncStatus();
+            
+            // Load initial data
+            loadTasks();
+            renderCurrentTab();
+            updateBadges();
+        }
+        
+        // Update badges
+        function updateBadges() {
+            if (!userData) return;
+            
+            const allTasksArray = Object.values(allTasks);
+            
+            // All tasks badge
+            const allTasksBadge = document.getElementById('allTasksBadge');
+            if (allTasksBadge) {
+                allTasksBadge.textContent = allTasksArray.length;
+                allTasksBadge.style.display = allTasksArray.length > 0 ? 'inline-block' : 'none';
+            }
+            
+            // My tasks badge
+            const myTasksArray = allTasksArray.filter(task => task.requested_by === userData.email);
+            const myTasksBadge = document.getElementById('myTasksBadge');
+            if (myTasksBadge) {
+                myTasksBadge.textContent = myTasksArray.length;
+                myTasksBadge.style.display = myTasksArray.length > 0 ? 'inline-block' : 'none';
+            }
+            
+            // Assigned tasks badge
+            const assignedTasksArray = allTasksArray.filter(task => task.assigned_to === userData.email);
+            const assignedTasksBadge = document.getElementById('assignedTasksBadge');
+            if (assignedTasksBadge) {
+                assignedTasksBadge.textContent = assignedTasksArray.length;
+                assignedTasksBadge.style.display = assignedTasksArray.length > 0 ? 'inline-block' : 'none';
+            }
+        }
+        
+        // Open tab
+        function openTab(event, tabId) {
+            currentTab = tabId;
+            
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+            
+            if (event && event.target) {
+                const target = event.target.closest('.tab-btn');
+                if (target) {
+                    target.classList.add('active');
+                }
+            }
+            
+            renderCurrentTab();
+        }
+        
+        // Render current tab
+        function renderCurrentTab() {
+            switch(currentTab) {
+                case 'allTasksTab':
+                    renderAllTasks();
+                    break;
+                case 'createTaskTab':
+                    // Nothing to render here
+                    break;
+                case 'myTasksTab':
+                    renderMyTasks();
+                    break;
+                case 'assignedTasksTab':
+                    renderAssignedTasks();
+                    break;
+                case 'adminTasksTab':
+                    renderAdminTasks();
+                    break;
+            }
+            updateBadges();
+        }
+        
+        // Submit new task
+        async function submitNewTask() {
+            const description = document.getElementById('taskDescription').value.trim();
+            const zone = document.getElementById('taskZone').value;
+            const photoFile = document.getElementById('taskPhoto').files[0] || null;
+            
+            console.log("Submitting new task:", { description, zone });
+            
+            if (!description) {
+                showNotification("Please enter task description", "error");
+                return;
+            }
+            
+            if (!zone || zone === "") {
+                showNotification("Please select a zone", "error");
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submitTaskBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SUBMITTING...';
+            
+            try {
+                const success = await addTask(description, zone, photoFile);
+                
+                if (success) {
+                    // Clear form
+                    document.getElementById('taskDescription').value = '';
+                    document.getElementById('taskZone').selectedIndex = 0;
+                    document.getElementById('taskPhoto').value = '';
+                    document.getElementById('photoPreview').innerHTML = '';
+                    
+                    showNotification("Task submitted for admin approval!", "success");
+                    
+                    // Switch to My Tasks tab
+                    openTab(null, 'myTasksTab');
+                    
+                    // Force reload tasks
+                    loadTasks();
+                } else {
+                    showNotification("Failed to submit task", "error");
+                }
+            } catch (error) {
+                console.error("Error in submitNewTask:", error);
+                showNotification("Error: " + error.message, "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+        
+        // Filter all tasks
+        function filterAllTasks() {
+            const searchTerm = document.getElementById('searchAllTasks')?.value.toLowerCase() || '';
+            renderAllTasks(searchTerm);
+        }
+        
+        // Render all tasks
+        function renderAllTasks(searchTerm = '') {
+            const element = document.getElementById('allTaskList');
+            const countElement = document.getElementById('allTaskCount');
+            
+            if (!element) return;
+            
+            const tasksArray = Object.values(allTasks);
+            
+            // Filter if search term exists
+            let filteredTasks = tasksArray;
+            if (searchTerm) {
+                filteredTasks = tasksArray.filter(task => {
+                    return (
+                        (task.description && task.description.toLowerCase().includes(searchTerm)) ||
+                        (task.zone && task.zone.toLowerCase().includes(searchTerm)) ||
+                        (task.requested_by_name && task.requested_by_name.toLowerCase().includes(searchTerm)) ||
+                        (task.status && task.status.toLowerCase().includes(searchTerm))
+                    );
+                });
+            }
+            
+            // Sort by date (newest first)
+            filteredTasks.sort((a, b) => {
+                const dateA = a.requested_at ? new Date(a.requested_at).getTime() : 0;
+                const dateB = b.requested_at ? new Date(b.requested_at).getTime() : 0;
+                return dateB - dateA;
+            });
+            
+            // Update count
+            if (countElement) {
+                countElement.textContent = filteredTasks.length;
+            }
+            
+            // Render
+            renderTaskList(element, filteredTasks, 'all');
+        }
+        
+        // Render my tasks
+        function renderMyTasks() {
+            const element = document.getElementById('myTaskList');
+            const countElement = document.getElementById('myTaskCount');
+            
+            if (!element || !userData) return;
+            
+            const tasksArray = Object.values(allTasks);
+            const myTasks = tasksArray.filter(task => 
+                task.requested_by === userData.email
+            );
+            
+            myTasks.sort((a, b) => {
+                const dateA = a.requested_at ? new Date(a.requested_at).getTime() : 0;
+                const dateB = b.requested_at ? new Date(b.requested_at).getTime() : 0;
+                return dateB - dateA;
+            });
+            
+            if (countElement) {
+                countElement.textContent = myTasks.length;
+            }
+            
+            renderTaskList(element, myTasks, 'my');
+        }
+        
+        // Render assigned tasks
+        function renderAssignedTasks() {
+            const element = document.getElementById('assignedTaskList');
+            const countElement = document.getElementById('assignedTaskCount');
+            
+            if (!element || !userData) return;
+            
+            const tasksArray = Object.values(allTasks);
+            const assignedTasks = tasksArray.filter(task => 
+                task.assigned_to === userData.email
+            );
+            
+            assignedTasks.sort((a, b) => {
+                const dateA = a.requested_at ? new Date(a.requested_at).getTime() : 0;
+                const dateB = b.requested_at ? new Date(b.requested_at).getTime() : 0;
+                return dateB - dateA;
+            });
+            
+            if (countElement) {
+                countElement.textContent = assignedTasks.length;
+            }
+            
+            renderTaskList(element, assignedTasks, 'assigned');
+        }
+        
+        // Render admin tasks
+        function renderAdminTasks() {
+            const element = document.getElementById('adminTaskList');
+            const countElement = document.getElementById('adminTaskCount');
+            
+            if (!element) return;
+            
+            const tasksArray = Object.values(allTasks);
+            const adminTasks = tasksArray.filter(task => 
+                task.is_admin_request === true
+            );
+            
+            adminTasks.sort((a, b) => {
+                const dateA = a.requested_at ? new Date(a.requested_at).getTime() : 0;
+                const dateB = b.requested_at ? new Date(b.requested_at).getTime() : 0;
+                return dateB - dateA;
+            });
+            
+            if (countElement) {
+                countElement.textContent = adminTasks.length;
+            }
+            
+            renderTaskList(element, adminTasks, 'admin');
+        }
+        
+        // Generic task list renderer
+        function renderTaskList(element, tasksArray, listType) {
+            if (!element) return;
+            
+            if (tasksArray.length === 0) {
+                let message = '';
+                let icon = '';
+                
+                switch(listType) {
+                    case 'all':
+                        message = 'No tasks in the system yet';
+                        icon = 'fa-clipboard-list';
+                        break;
+                    case 'my':
+                        message = 'You haven\'t created any tasks yet';
+                        icon = 'fa-tasks';
+                        break;
+                    case 'assigned':
+                        message = 'No tasks assigned to you';
+                        icon = 'fa-user-check';
+                        break;
+                    case 'admin':
+                        message = 'No admin tasks yet';
+                        icon = 'fa-user-shield';
+                        break;
+                }
+                
+                element.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas ${icon}" style="font-size: 3rem; color: #4caf50; margin-bottom: 15px;"></i>
+                        <h4>${message}</h4>
+                        ${listType === 'my' ? '<p>Go to "Create Task" tab to create your first task!</p>' : ''}
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div style="display: grid; gap: 15px;">';
+            
+            tasksArray.forEach((task) => {
+                const status = task.status || 'pending';
+                const taskDate = task.requested_at ? 
+                    new Date(task.requested_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'Date not set';
+                
+                // Check if current user can act on this task
+                const canCancel = task.requested_by === userData?.email && 
+                                 status === 'pending' && 
+                                 !task.is_admin_request;
+                
+                // FIXED: Team members can mark tasks complete if:
+                // 1. Task is assigned to them AND status is approved
+                // 2. OR task is their own and already approved
+                const canComplete = (task.assigned_to === userData?.email && status === 'approved') ||
+                                   (task.requested_by === userData?.email && status === 'approved' && !task.assigned_to);
+                
+                console.log(`Task ${task.id}: assigned_to=${task.assigned_to}, user=${userData?.email}, canComplete=${canComplete}, status=${status}`);
+                
+                html += `
+                    <div class="task-card ${task.is_urgent ? 'urgent' : ''} ${task.is_admin_request ? 'admin-request' : ''}">
+                        <div class="task-meta">
+                            <div>
+                                <span class="status-badge status-${status.charAt(0).toUpperCase() + status.slice(1)}">
+                                    <i class="fas fa-${getStatusIcon(status)}"></i> ${status.toUpperCase()}
+                                </span>
+                                ${task.is_urgent ? '<span class="priority-badge priority-urgent"><i class="fas fa-exclamation-triangle"></i> URGENT</span>' : ''}
+                                ${task.is_admin_request ? '<span class="status-badge" style="background: #1b5e20; color: white; margin-left: 5px;"><i class="fas fa-user-shield"></i> ADMIN</span>' : ''}
+                                <strong>${task.zone || 'No Zone'}</strong>
+                            </div>
+                            <small>${taskDate}</small>
+                        </div>
+                        
+                        <p style="margin: 10px 0;">${task.description || 'No description'}</p>
+                        
+                        <div style="font-size: 14px; color: #666; margin: 10px 0;">
+                            <div><i class="fas fa-user"></i> <strong>Created by:</strong> ${task.requested_by_name || task.requested_by}</div>
+                            ${task.assigned_to ? `<div><i class="fas fa-user-check"></i> <strong>Assigned to:</strong> ${task.assigned_to_name || task.assigned_to}</div>` : ''}
+                            ${task.approved_by ? `<div><i class="fas fa-check-circle"></i> <strong>Approved by:</strong> ${task.approved_by_name || task.approved_by}</div>` : ''}
+                            ${task.rejection_reason ? `<div><i class="fas fa-times-circle"></i> <strong>Rejected:</strong> ${task.rejection_reason}</div>` : ''}
+                        </div>
+                        
+                        ${task.photoBase64 ? `
+                            <div style="margin: 10px 0;">
+                                <img src="${task.photoBase64}" alt="Task photo" 
+                                     style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;"
+                                     onclick="openPhotoModal('${task.photoBase64.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">
+                            </div>
+                        ` : ''}
+                        
+                        <div class="task-actions">
+                            ${canCancel ? `
+                                <button class="btn small red" onclick="cancelTask('${task.id}')">
+                                    <i class="fas fa-times"></i> Cancel Request
+                                </button>
+                            ` : ''}
+                            
+                            ${canComplete ? `
+                                <button class="btn small submit" onclick="markTaskComplete('${task.id}')">
+                                    <i class="fas fa-check-circle"></i> Mark Complete
+                                </button>
+                            ` : ''}
+                            
+                            ${status === 'completed' ? `
+                                <div style="padding: 8px 15px; background: #e3f2fd; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-check-circle" style="color: #1565c0;"></i>
+                                    <span style="color: #1565c0; font-size: 14px;">Completed</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            element.innerHTML = html;
+        }
+        
+        // Open photo modal
+        function openPhotoModal(photoBase64) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="position: relative; max-width: 90%; max-height: 90%;">
+                    <img src="${photoBase64}" alt="Full size" style="max-width: 100%; max-height: 90vh; border-radius: 10px;">
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="position: absolute; top: -40px; right: 0; background: none; border: none; color: white; 
+                                   font-size: 30px; cursor: pointer;">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        // Make functions available globally
+        window.togglePassword = togglePassword;
+        window.handleTeamLogin = handleTeamLogin;
+        window.showTeamDashboard = showTeamDashboard;
+        window.submitNewTask = submitNewTask;
+        window.openTab = openTab;
+        window.renderAllTasks = renderAllTasks;
+        window.renderMyTasks = renderMyTasks;
+        window.renderAssignedTasks = renderAssignedTasks;
+        window.renderAdminTasks = renderAdminTasks;
+        window.filterAllTasks = filterAllTasks;
+        window.openPhotoModal = openPhotoModal;
+        window.renderCurrentTab = renderCurrentTab;
+        window.loadTasks = loadTasks;
+        window.toggleDebug = toggleDebug;
+    </script>
+</body>
+</html>
